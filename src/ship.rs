@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{ bullet::Bullet, constants::BULLET_RELOAD_TIME, constants::SHIP_SIZE };
+use crate::{ bullet::Bullet, constants::BULLET_RELOAD_TIME };
 
 pub struct Ship {
     pub position: Vec2,
@@ -67,18 +67,4 @@ impl Ship {
         }
     }
 
-    pub fn render(&self) {
-        draw_circle(self.position.x, self.position.y, SHIP_SIZE, RED);
-        draw_line(
-            self.position.x,
-            self.position.y,
-            self.position.x + self.direction.x * 100.0,
-            self.position.y + self.direction.y * 100.0,
-            1.0,
-            YELLOW,
-        );
-
-        // debug
-        draw_circle(mouse_position().0, mouse_position().1, 5.0, PURPLE);
-    }
 }

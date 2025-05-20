@@ -13,7 +13,7 @@ impl GameSettings {
 impl Default for GameSettings {
     fn default() -> Self {
         Self {
-            window_size: Vec2 { x: 800.0, y: 800.0 },
+            window_size: Vec2 { x: 1000.0, y: 1000.0 },
         }
     }
 }
