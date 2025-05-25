@@ -1,13 +1,9 @@
 use std::cmp::max;
 
-use macroquad::prelude::*;
+use macroquad::{miniquad::window::screen_size, prelude::*};
 
 use crate::{
-    asteroid::{Asteroid, AsteroidType},
-    bullet::Bullet,
-    constants,
-    ship::Ship,
-    texture_manager::{self, TextureId, TextureManager},
+    asteroid::{Asteroid, AsteroidType}, bullet::Bullet, constants, math::contrain_play_area, ship::Ship, texture_manager::{SpriteId, TextureManager}
 };
 
 #[derive(PartialEq)]
@@ -60,12 +56,26 @@ impl Scene {
         if (get_time() - self.last_time_asteroid_spawned) > constants::ASTEROID_SPAWN_SEC {
             self.last_time_asteroid_spawned = get_time();
 
-            let x = rand::gen_range(0.0, 800.0);
-            let y = rand::gen_range(0.0, 800.0);
+            let window_size = screen_size();
+            let safe_zone = 40.0;
 
-            let direction = (Vec2 { x: 400.0, y: 400.0 } - Vec2 { x, y }).normalize();
+            let x = if rand::gen_range(0.0, 1.0) < 0.5 {
+                rand::gen_range(-safe_zone, 0.0)
+            } else {
+                rand::gen_range(window_size.0, window_size.0 + safe_zone)
+            };
+
+            let y = if rand::gen_range(0.0, 1.0) < 0.5 {
+                rand::gen_range(-safe_zone, 0.0)
+            } else {
+                rand::gen_range(window_size.1, window_size.1 + safe_zone)
+            };
+
+            let direction = (Vec2 { x: window_size.0 / 2.0, y: window_size.1 / 2.0 } - Vec2 { x, y }).normalize();
 
             let new_asteroid = Asteroid::new(Vec2 { x, y }, direction);
+
+            println!("new asteroid: {} {}", x, y);
 
             self.asteroids.push(new_asteroid);
         }
@@ -75,6 +85,9 @@ impl Scene {
         for asteroid in self.asteroids.iter_mut() {
             if asteroid.alive {
                 asteroid.position += asteroid.direction * delta_time * asteroid.active_type.speed();
+                asteroid.rotation += asteroid.active_type.rotation_speed() * delta_time;
+
+                asteroid.position = contrain_play_area(asteroid.position);
 
                 if asteroid.colliding_ship(&self.player) {
                     self.current_state = SceneState::Lost;
@@ -88,6 +101,14 @@ impl Scene {
         for bullet in self.bullets.iter_mut() {
             if bullet.alive {
                 bullet.position += bullet.direction * delta_time * constants::BULLET_SPEED;
+                bullet.position = contrain_play_area(bullet.position);
+                
+                bullet.time_passed += delta_time;
+
+                if bullet.time_passed > 2.0 {
+                    bullet.alive = false;
+                    continue;
+                }
 
                 for asteroid in self.asteroids.iter_mut() {
                     if asteroid.alive && asteroid.colliding_bullet(&bullet) {
@@ -114,6 +135,7 @@ impl Scene {
                                     active_type: new_type,
                                     position: asteroid.position,
                                     direction: direction,
+                                    rotation: 0.0,
                                     alive: true,
                                 });
                             }
@@ -126,11 +148,11 @@ impl Scene {
                                 self.new_asteroids.push(Asteroid {
                                     active_type: new_type,
                                     position: asteroid.position,
+                                    rotation: 0.0,
                                     direction: direction,
                                     alive: true,
                                 });
                             }
-                            // asteroids.
                         }
                     }
                 }
@@ -149,43 +171,39 @@ impl Scene {
     }
 
     pub fn render_ship(&self) {
-        let ship_draw_params = DrawTextureParams {
-            dest_size: Some(Vec2 {
-                x: constants::SHIP_SIZE,
-                y: constants::SHIP_SIZE,
-            }),
-            source: Some(Rect {
-                x: 16.0,
-                y: 0.0,
-                w: 16.0,
-                h: 16.0,
-            }),
-            rotation: 0.,
-            pivot: None,
-            flip_x: false,
-            flip_y: false,
-        };
-        let ship_texture = &self
-            .texture_manager
+        // draw_circle(
+        //     self.player.position.x,
+        //     self.player.position.y,
+        //     constants::SHIP_SIZE / 2.0,
+        //     RED,
+        // );
+
+        self.texture_manager
             .textures
-            .get(&TextureId::Player)
-            .unwrap();
-        draw_texture_ex(
-            ship_texture,
-            self.player.position.x - 8.0,
-            self.player.position.y - 8.0,
-            WHITE,
-            ship_draw_params,
-        );
-        // draw_circle(self.player.position.x, self.player.position.y, constants::SHIP_SIZE, RED);
-        draw_line(
-            self.player.position.x,
-            self.player.position.y,
-            self.player.position.x + self.player.direction.x * 100.0,
-            self.player.position.y + self.player.direction.y * 100.0,
-            1.0,
-            YELLOW,
-        );
+            .get(&SpriteId::Player)
+            .unwrap()
+            .draw(
+                self.player.position,
+                self.player.rotation,
+                constants::SHIP_SIZE,
+            );
+
+        if self.player.booster_active {
+            self.texture_manager
+                .textures
+                .get(&SpriteId::PlayerBooster)
+                .unwrap()
+                .draw(self.player.exhaust_pos, self.player.rotation, 10.0);
+        }
+
+        // draw_line(
+        //     self.player.barrel_pos.x,
+        //     self.player.barrel_pos.y,
+        //     self.player.barrel_pos.x + self.player.direction.x * 100.0,
+        //     self.player.barrel_pos.y + self.player.direction.y * 100.0,
+        //     1.0,
+        //     YELLOW,
+        // );
 
         // debug
         draw_circle(mouse_position().0, mouse_position().1, 5.0, PURPLE);
@@ -209,12 +227,22 @@ impl Scene {
 
         for asteroid in self.asteroids.iter() {
             if asteroid.alive {
-                draw_circle(
-                    asteroid.position.x,
-                    asteroid.position.y,
-                    asteroid.active_type.size(),
-                    BROWN,
-                );
+                // draw_circle(
+                //     asteroid.position.x,
+                //     asteroid.position.y,
+                //     asteroid.active_type.size(),
+                //     RED,
+                // );
+
+                self.texture_manager
+                    .textures
+                    .get(&SpriteId::Asteroid)
+                    .unwrap()
+                    .draw(
+                        asteroid.position,
+                        asteroid.rotation,
+                        asteroid.active_type.size(),
+                    );
             }
         }
 

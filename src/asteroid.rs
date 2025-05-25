@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{constants::BULLET_SIZE, constants::SHIP_SIZE, bullet::Bullet, ship::Ship};
+use crate::{bullet::Bullet, constants::BULLET_SIZE, constants::SHIP_SIZE, ship::Ship};
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum AsteroidType {
@@ -26,6 +26,14 @@ impl AsteroidType {
         }
     }
 
+    pub fn rotation_speed(&self) -> f32 {
+        match self {
+            AsteroidType::Small => 2.0,
+            AsteroidType::Medium => 1.0,
+            AsteroidType::Big => 0.5,
+        }
+    }
+
     pub fn points(&self) -> u32 {
         match self {
             AsteroidType::Small => 300,
@@ -38,6 +46,7 @@ impl AsteroidType {
 pub struct Asteroid {
     pub active_type: AsteroidType,
     pub position: Vec2,
+    pub rotation: f32,
     pub direction: Vec2,
     pub alive: bool,
 }
@@ -47,16 +56,17 @@ impl Asteroid {
         Asteroid {
             active_type: AsteroidType::Big,
             position,
+            rotation: 0.0,
             direction,
             alive: true,
         }
     }
 
     pub fn colliding_ship(&self, ship: &Ship) -> bool {
-        ship.position.distance(self.position) < self.active_type.size() + SHIP_SIZE
+        ship.position.distance(self.position) < self.active_type.size() + SHIP_SIZE / 2.0
     }
 
     pub fn colliding_bullet(&self, bullet: &Bullet) -> bool {
-        bullet.position.distance(self.position) < self.active_type.size() + BULLET_SIZE
+        bullet.position.distance(self.position) < self.active_type.size() + BULLET_SIZE / 2.0
     }
 }

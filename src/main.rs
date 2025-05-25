@@ -5,6 +5,7 @@ mod game_settings;
 mod scene;
 mod ship;
 mod texture_manager;
+mod math;
 
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
