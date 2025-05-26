@@ -5,9 +5,7 @@ pub struct GameSettings {
 }
 
 impl GameSettings {
-    pub fn new(window_size: Vec2) -> Self {
-        Self { window_size }
-    }
+
 }
 
 impl Default for GameSettings {

@@ -22,22 +22,38 @@ async fn main() {
     let mut scene = Scene::new(game_settings.window_size);
     scene.texture_manager.load_assets().await;
 
+    show_mouse(false);
+
     loop {
         let delta_time = get_frame_time(); // milliseconds
-
-        if scene.current_state == SceneState::Lost {
-            scene.new_level(screen_size().into());
-            scene.current_state = SceneState::InGame;
-        }
 
         if is_key_down(KeyCode::Escape) {
             break;
         }
 
-        scene.update(delta_time);
+        if scene.current_state == SceneState::MainMenu {
+            if is_key_down(KeyCode::Space) {
+                scene.new_level(screen_size().into());
+                scene.current_state = SceneState::InGame;
+                continue;
+            }
+        }
+
+        if scene.current_state == SceneState::Lost {
+            if is_key_down(KeyCode::Space) {
+                scene.new_level(screen_size().into());
+                scene.current_state = SceneState::InGame;
+                continue;
+            }
+        }
+
+        if scene.current_state == SceneState::InGame {
+            scene.update(delta_time);
+        }
+
         scene.render(delta_time);
 
-        next_frame().await
+        next_frame().await;
     }
 }
 

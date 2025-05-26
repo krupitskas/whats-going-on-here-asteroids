@@ -6,7 +6,7 @@ use crate::{
     asteroid::{Asteroid, AsteroidType},
     bullet::Bullet,
     constants,
-    enemy::{self, Enemy},
+    enemy::Enemy,
     math::contrain_play_area,
     ship::Ship,
     texture_manager::{SpriteId, TextureManager},
@@ -35,9 +35,7 @@ pub struct Scene {
 
 impl Scene {
     pub fn new(screen_size: Vec2) -> Scene {
-        // temp
-
-        let mut s = Scene {
+        Scene {
             player: Ship::new(screen_size),
             asteroids: Vec::new(),
             new_asteroids: Vec::new(),
@@ -47,16 +45,9 @@ impl Scene {
             player_score: 0,
             best_player_score: 0,
             player_died_times: 0,
-            current_state: SceneState::InGame,
+            current_state: SceneState::MainMenu,
             texture_manager: TextureManager::new(),
-        };
-
-        s.enemies.push(Enemy {
-            position: Vec2 { x: 700.0, y: 500.0 },
-            direction: Vec2::default(),
-        });
-
-        s
+        }
     }
 
     pub fn new_level(&mut self, screen_size: Vec2) {
@@ -67,7 +58,10 @@ impl Scene {
         self.bullets.clear();
         self.enemies.clear();
         self.last_time_asteroid_spawned = 0.0;
-        self.player_died_times += 1;
+
+        self.enemies.push(Enemy {
+            position: Vec2 { x: 700.0, y: 500.0 },
+        });
     }
 
     pub fn try_spawn_asteroid(&mut self) {
@@ -97,8 +91,6 @@ impl Scene {
 
             let new_asteroid = Asteroid::new(Vec2 { x, y }, direction);
 
-            println!("new asteroid: {} {}", x, y);
-
             self.asteroids.push(new_asteroid);
         }
     }
@@ -113,7 +105,8 @@ impl Scene {
 
                 if asteroid.colliding_ship(&self.player) {
                     self.current_state = SceneState::Lost;
-                    continue;
+                    self.player_died_times += 1;
+                    break;
                 }
             }
         }
@@ -156,7 +149,7 @@ impl Scene {
                                 self.new_asteroids.push(Asteroid {
                                     active_type: new_type,
                                     position: asteroid.position,
-                                    direction: direction,
+                                    direction,
                                     rotation: 0.0,
                                     alive: true,
                                 });
@@ -171,7 +164,7 @@ impl Scene {
                                     active_type: new_type,
                                     position: asteroid.position,
                                     rotation: 0.0,
-                                    direction: direction,
+                                    direction,
                                     alive: true,
                                 });
                             }
@@ -219,51 +212,38 @@ impl Scene {
         //     .draw_animated(delta_time, pos, 0.0, size);
     }
 
-    pub fn render_ship(&self) {
-        // draw_circle(
-        //     self.player.position.x,
-        //     self.player.position.y,
-        //     constants::SHIP_SIZE / 2.0,
-        //     RED,
-        // );
-
-        self.texture_manager
-            .textures
-            .get(&SpriteId::Player)
-            .unwrap()
-            .draw(
-                self.player.position,
-                self.player.rotation,
-                constants::SHIP_SIZE,
-            );
-
-        if self.player.booster_active {
-            self.texture_manager
-                .textures
-                .get(&SpriteId::PlayerBooster)
-                .unwrap()
-                .draw(self.player.exhaust_pos, self.player.rotation, 10.0);
-        }
-
-        // draw_line(
-        //     self.player.barrel_pos.x,
-        //     self.player.barrel_pos.y,
-        //     self.player.barrel_pos.x + self.player.direction.x * 100.0,
-        //     self.player.barrel_pos.y + self.player.direction.y * 100.0,
-        //     1.0,
-        //     YELLOW,
-        // );
-
-        // debug
-        draw_circle(mouse_position().0, mouse_position().1, 5.0, PURPLE);
-    }
-
     pub fn render(&mut self, delta_time: f32) {
         clear_background(MAGENTA);
-
         self.render_background(delta_time);
 
-        self.render_ship();
+        if self.current_state == SceneState::MainMenu {
+            let pos = Vec2 {
+                x: screen_width() / 2.0,
+                y: screen_height() / 2.0,
+            };
+            self.texture_manager
+                .textures
+                .get(&SpriteId::StartUI)
+                .unwrap()
+                .draw(pos, 0.0, 100.0);
+            return;
+        }
+
+        if self.current_state == SceneState::Lost {
+            let pos = Vec2 {
+                x: screen_width() / 2.0,
+                y: screen_height() / 2.0,
+            };
+            self.texture_manager
+                .textures
+                .get(&SpriteId::GameOverUI)
+                .unwrap()
+                .draw(pos, 0.0, 100.0);
+            return;
+        }
+
+        self.player
+            .render(delta_time, &mut self.texture_manager.textures);
 
         for enemy in self.enemies.iter() {
             enemy.render(delta_time, &mut self.texture_manager.textures);
@@ -308,7 +288,7 @@ impl Scene {
         }
 
         draw_text(
-            std::format!("ms: {}", delta_time).as_str(),
+            std::format!("ms: {delta_time}").as_str(),
             20.0,
             20.0,
             20.0,

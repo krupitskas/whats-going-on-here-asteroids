@@ -10,7 +10,7 @@ pub enum AsteroidType {
 }
 
 impl AsteroidType {
-    pub fn size(&self) -> f32 {
+    pub fn size(self) -> f32 {
         match self {
             AsteroidType::Small => 10.0,
             AsteroidType::Medium => 20.0,
@@ -18,7 +18,7 @@ impl AsteroidType {
         }
     }
 
-    pub fn speed(&self) -> f32 {
+    pub fn speed(self) -> f32 {
         match self {
             AsteroidType::Small => 200.0,
             AsteroidType::Medium => 150.0,
@@ -26,7 +26,7 @@ impl AsteroidType {
         }
     }
 
-    pub fn rotation_speed(&self) -> f32 {
+    pub fn rotation_speed(self) -> f32 {
         match self {
             AsteroidType::Small => 2.0,
             AsteroidType::Medium => 1.0,
@@ -34,7 +34,7 @@ impl AsteroidType {
         }
     }
 
-    pub fn points(&self) -> u32 {
+    pub fn points(self) -> u32 {
         match self {
             AsteroidType::Small => 300,
             AsteroidType::Medium => 200,

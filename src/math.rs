@@ -17,3 +17,13 @@ pub fn contrain_play_area(pos: Vec2) -> Vec2 {
 
     new_pos
 }
+
+pub fn rotate_vector(v: Vec2, angle_rad: f32) -> Vec2 {
+    let cos_theta = angle_rad.cos();
+    let sin_theta = angle_rad.sin();
+
+    Vec2::new(
+        v.x * cos_theta - v.y * sin_theta,
+        v.x * sin_theta + v.y * cos_theta,
+    )
+}

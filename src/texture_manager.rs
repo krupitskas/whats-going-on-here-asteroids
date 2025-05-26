@@ -6,6 +6,10 @@ use macroquad::{
     texture::{DrawTextureParams, FilterMode, Texture2D, draw_texture_ex, load_texture},
 };
 
+// use once_cell::sync::OnceCell;
+
+// static SpriteManagerInst: OnceCell<TextureManager> = OnceCell::new();
+
 #[derive(PartialEq, Eq, Hash)]
 pub enum SpriteId {
     Player,
@@ -16,6 +20,9 @@ pub enum SpriteId {
     Background0,
     Background1,
     Background2,
+    ExplosionVFX,
+    StartUI,
+    GameOverUI
 }
 
 pub struct Sprite {
@@ -115,7 +122,7 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::Player,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 16.0, y: 16.0 },
                     texture_index: 1,
                     animation_count: 1,
@@ -136,7 +143,7 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::Enemy,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 16.0, y: 16.0 },
                     texture_index: 0,
                     animation_count: 6,
@@ -157,7 +164,7 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::Background0,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 638.0, y: 360.0 },
                     texture_index: 0,
                     animation_count: 9,
@@ -178,7 +185,7 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::Background1,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 640.0, y: 360.0 },
                     texture_index: 0,
                     animation_count: 9,
@@ -199,7 +206,7 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::Background2,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 640.0, y: 360.0 },
                     texture_index: 0,
                     animation_count: 9,
@@ -222,7 +229,7 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::PlayerBullet,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 16.0, y: 16.0 },
                     texture_index: 0,
                     animation_count: 2,
@@ -244,7 +251,7 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::PlayerBooster,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 16.0, y: 16.0 },
                     texture_index: 0,
                     animation_count: 1,
@@ -267,13 +274,82 @@ impl TextureManager {
             self.textures.insert(
                 SpriteId::Asteroid,
                 Sprite {
-                    texture: texture,
+                    texture,
                     size: Vec2 { x: 38.0, y: 33.0 },
                     texture_index: 0,
                     animation_count: 1,
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
                     fps: 0.0
+                },
+            );
+        }
+
+        // Start
+        {
+            let texture = load_texture(
+                "assets/Mini Pixel Pack 3/UI objects/START (48 x 8).png",
+            )
+            .await
+            .unwrap();
+            texture.set_filter(FilterMode::Nearest);
+
+            self.textures.insert(
+                SpriteId::StartUI,
+                Sprite {
+                    texture,
+                    size: Vec2 { x: 48.0, y: 8.0 },
+                    texture_index: 0,
+                    animation_count: 1,
+                    size_mult: 2.0,
+                    time_scince_frame: 0.0,
+                    fps: 0.0
+                },
+            );
+        }
+
+        // Game Over
+        {
+            let texture = load_texture(
+                "assets/Mini Pixel Pack 3/UI objects/GAME_OVER (72 x 8).png",
+            )
+            .await
+            .unwrap();
+            texture.set_filter(FilterMode::Nearest);
+
+            self.textures.insert(
+                SpriteId::GameOverUI,
+                Sprite {
+                    texture,
+                    size: Vec2 { x: 72.0, y: 8.0 },
+                    texture_index: 0,
+                    animation_count: 1,
+                    size_mult: 2.0,
+                    time_scince_frame: 0.0,
+                    fps: 0.0
+                },
+            );
+        }
+
+        // Explosion
+        {
+            let texture = load_texture(
+                "assets/Mini Pixel Pack 3/Effects/Explosion (16 x 16).png",
+            )
+            .await
+            .unwrap();
+            texture.set_filter(FilterMode::Nearest);
+
+            self.textures.insert(
+                SpriteId::ExplosionVFX,
+                Sprite {
+                    texture,
+                    size: Vec2 { x: 16.0, y: 16.0 },
+                    texture_index: 0,
+                    animation_count: 6,
+                    size_mult: 2.0,
+                    time_scince_frame: 0.0,
+                    fps: 3.0
                 },
             );
         }
