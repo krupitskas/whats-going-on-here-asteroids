@@ -90,7 +90,7 @@ impl Ship {
             self.booster_active = true;
         }
         if is_key_down(KeyCode::S) {
-            self.inertia -= self.inertia * 0.01;
+            self.inertia -= self.inertia * 1.5 * delta_time;
         }
         // if is_key_down(KeyCode::S) {
         //     self.inertia.y += self.speed * delta_time * boost_multiplier;
@@ -102,7 +102,7 @@ impl Ship {
         self.position += self.inertia;
         self.position = contrain_play_area(self.position);
 
-        self.inertia -= self.inertia * 0.01;
+        self.inertia -= self.inertia * 1.5 * delta_time;
 
         if is_key_down(KeyCode::Space)
             && (get_time() as f64 - self.last_shot_time) > BULLET_RELOAD_TIME

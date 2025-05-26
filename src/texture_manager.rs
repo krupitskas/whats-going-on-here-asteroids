@@ -25,13 +25,12 @@ pub struct Sprite {
     pub animation_count: u32,
     pub size_mult: f32,
     pub time_scince_frame: f32,
+    pub fps: f32
 }
-
-const ANIMATION_FRAMES_PER_SECOND: u32 = 3;
 
 impl Sprite {
     pub fn draw_animated(&mut self, delta_time: f32, pos: Vec2, rot: f32, size: f32) {
-        let target_time_slice = 1.0 / ANIMATION_FRAMES_PER_SECOND as f32;
+        let target_time_slice = 1.0 / self.fps as f32;
 
         self.time_scince_frame += delta_time; // BUG: Not sprite but instance of sprite
 
@@ -122,6 +121,7 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
+                    fps: 0.0
                 },
             );
         }
@@ -142,10 +142,11 @@ impl TextureManager {
                     animation_count: 6,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
+                    fps: 3.0
                 },
             );
         }
-
+        let background_fps = 10.0;
         // Background0
         {
             let texture = load_texture("assets/Foozle_2DS0015_Void_EnvironmentPack/Backgrounds/PNGs/Condesed/Starry background  - Layer 01 - Void.png")
@@ -157,11 +158,12 @@ impl TextureManager {
                 SpriteId::Background0,
                 Sprite {
                     texture: texture,
-                    size: Vec2 { x: 720.0, y: 360.0 },
+                    size: Vec2 { x: 638.0, y: 360.0 },
                     texture_index: 0,
-                    animation_count: 8,
+                    animation_count: 9,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
+                    fps: background_fps
                 },
             );
         }
@@ -177,11 +179,12 @@ impl TextureManager {
                 SpriteId::Background1,
                 Sprite {
                     texture: texture,
-                    size: Vec2 { x: 720.0, y: 360.0 },
+                    size: Vec2 { x: 640.0, y: 360.0 },
                     texture_index: 0,
-                    animation_count: 8,
+                    animation_count: 9,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
+                    fps: background_fps
                 },
             );
         }
@@ -197,11 +200,12 @@ impl TextureManager {
                 SpriteId::Background2,
                 Sprite {
                     texture: texture,
-                    size: Vec2 { x: 360.0, y: 360.0 },
+                    size: Vec2 { x: 640.0, y: 360.0 },
                     texture_index: 0,
-                    animation_count: 16,
+                    animation_count: 9,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
+                    fps: background_fps
                 },
             );
         }
@@ -224,6 +228,7 @@ impl TextureManager {
                     animation_count: 2,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
+                    fps: 10.0
                 },
             );
         }
@@ -245,6 +250,7 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 3.0,
                     time_scince_frame: 0.0,
+                    fps: 0.0
                 },
             );
         }
@@ -267,6 +273,7 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
+                    fps: 0.0
                 },
             );
         }
