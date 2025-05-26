@@ -3,7 +3,13 @@ use std::cmp::max;
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 use crate::{
-    asteroid::{Asteroid, AsteroidType}, bullet::Bullet, constants, math::contrain_play_area, ship::Ship, texture_manager::{SpriteId, TextureManager}
+    asteroid::{Asteroid, AsteroidType},
+    bullet::Bullet,
+    constants,
+    enemy::{self, Enemy},
+    math::contrain_play_area,
+    ship::Ship,
+    texture_manager::{SpriteId, TextureManager},
 };
 
 #[derive(PartialEq)]
@@ -18,6 +24,7 @@ pub struct Scene {
     pub asteroids: Vec<Asteroid>,
     pub new_asteroids: Vec<Asteroid>,
     pub bullets: Vec<Bullet>,
+    pub enemies: Vec<Enemy>,
     pub last_time_asteroid_spawned: f64,
     pub player_score: u32,
     pub best_player_score: u32,
@@ -28,18 +35,28 @@ pub struct Scene {
 
 impl Scene {
     pub fn new(screen_size: Vec2) -> Scene {
-        Scene {
+        // temp
+
+        let mut s = Scene {
             player: Ship::new(screen_size),
             asteroids: Vec::new(),
             new_asteroids: Vec::new(),
             bullets: Vec::new(),
+            enemies: Vec::new(),
             last_time_asteroid_spawned: 0.0,
             player_score: 0,
             best_player_score: 0,
             player_died_times: 0,
             current_state: SceneState::InGame,
             texture_manager: TextureManager::new(),
-        }
+        };
+
+        s.enemies.push(Enemy {
+            position: Vec2 { x: 700.0, y: 500.0 },
+            direction: Vec2::default(),
+        });
+
+        s
     }
 
     pub fn new_level(&mut self, screen_size: Vec2) {
@@ -48,6 +65,7 @@ impl Scene {
         self.player = Ship::new(screen_size);
         self.asteroids.clear();
         self.bullets.clear();
+        self.enemies.clear();
         self.last_time_asteroid_spawned = 0.0;
         self.player_died_times += 1;
     }
@@ -71,7 +89,11 @@ impl Scene {
                 rand::gen_range(window_size.1, window_size.1 + safe_zone)
             };
 
-            let direction = (Vec2 { x: window_size.0 / 2.0, y: window_size.1 / 2.0 } - Vec2 { x, y }).normalize();
+            let direction = (Vec2 {
+                x: window_size.0 / 2.0,
+                y: window_size.1 / 2.0,
+            } - Vec2 { x, y })
+            .normalize();
 
             let new_asteroid = Asteroid::new(Vec2 { x, y }, direction);
 
@@ -102,7 +124,7 @@ impl Scene {
             if bullet.alive {
                 bullet.position += bullet.direction * delta_time * constants::BULLET_SPEED;
                 bullet.position = contrain_play_area(bullet.position);
-                
+
                 bullet.time_passed += delta_time;
 
                 if bullet.time_passed > 2.0 {
@@ -170,6 +192,33 @@ impl Scene {
         self.check_bullets_vs_asteroids(delta_time);
     }
 
+    pub fn render_background(&mut self, delta_time: f32) {
+        let pos = Vec2 {
+            x: screen_width() / 2.0,
+            y: screen_height() / 2.0,
+        };
+
+        let size = screen_width().max(screen_height());
+
+        self.texture_manager
+            .textures
+            .get_mut(&SpriteId::Background0)
+            .unwrap()
+            .draw_animated(delta_time, pos, 0.0, size);
+
+        self.texture_manager
+            .textures
+            .get_mut(&SpriteId::Background1)
+            .unwrap()
+            .draw_animated(delta_time, pos, 0.0, size);
+
+        // self.texture_manager
+        //     .textures
+        //     .get_mut(&SpriteId::Background2)
+        //     .unwrap()
+        //     .draw_animated(delta_time, pos, 0.0, size);
+    }
+
     pub fn render_ship(&self) {
         // draw_circle(
         //     self.player.position.x,
@@ -209,20 +258,15 @@ impl Scene {
         draw_circle(mouse_position().0, mouse_position().1, 5.0, PURPLE);
     }
 
-    pub fn render(&self, delta_time: f32) {
-        clear_background(DARKBLUE);
+    pub fn render(&mut self, delta_time: f32) {
+        clear_background(MAGENTA);
+
+        self.render_background(delta_time);
 
         self.render_ship();
 
-        for bullet in self.bullets.iter() {
-            if bullet.alive {
-                draw_circle(
-                    bullet.position.x,
-                    bullet.position.y,
-                    constants::BULLET_SIZE,
-                    YELLOW,
-                );
-            }
+        for enemy in self.enemies.iter() {
+            enemy.render(delta_time, &mut self.texture_manager.textures);
         }
 
         for asteroid in self.asteroids.iter() {
@@ -243,6 +287,23 @@ impl Scene {
                         asteroid.rotation,
                         asteroid.active_type.size(),
                     );
+            }
+        }
+
+        for bullet in self.bullets.iter() {
+            if bullet.alive {
+                // draw_circle(
+                //     bullet.position.x,
+                //     bullet.position.y,
+                //     constants::BULLET_SIZE,
+                //     RED,
+                // );
+
+                self.texture_manager
+                    .textures
+                    .get_mut(&SpriteId::PlayerBullet)
+                    .unwrap()
+                    .draw_animated(delta_time, bullet.position, 0.0, 40.0);
             }
         }
 

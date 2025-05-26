@@ -6,18 +6,12 @@ mod scene;
 mod ship;
 mod texture_manager;
 mod math;
+mod enemy;
 
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 use game_settings::GameSettings;
 use scene::{Scene, SceneState};
-
-
-/*
-inertia
-clipping screen edges
-enemies
-*/
 
 #[macroquad::main("asteroids")]
 async fn main() {

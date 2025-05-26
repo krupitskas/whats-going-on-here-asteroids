@@ -1,4 +1,4 @@
-use macroquad::{miniquad::window::get_window_position, prelude::*};
+use macroquad::prelude::*;
 
 use crate::{
     bullet::Bullet,
@@ -50,7 +50,7 @@ impl Ship {
             exhaust_pos: Vec2::default(),
             rotation: 0.0,
             speed: 5.0,
-            rotation_speed: 2.0, // rad / sec?
+            rotation_speed: 3.0, // rad / sec?
             inertia: Vec2 { x: 0.0, y: 0.0 },
             booster_active: false,
             last_shot_time: 0.0,
