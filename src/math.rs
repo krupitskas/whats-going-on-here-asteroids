@@ -30,3 +30,7 @@ pub fn rotate_vector(v: Vec2, angle_rad: f32) -> Vec2 {
         v.x * sin_theta + v.y * cos_theta,
     )
 }
+
+pub fn circles_overlap(a_center: Vec2, a_radius: f32, b_center: Vec2, b_radius: f32) -> bool {
+    a_center.distance(b_center) < a_radius + b_radius
+}

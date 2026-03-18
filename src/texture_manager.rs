@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use macroquad::{
-    color::WHITE,
+    color::{Color, WHITE},
     math::{Rect, Vec2},
     texture::{DrawTextureParams, FilterMode, Texture2D, draw_texture_ex, load_texture},
 };
@@ -11,7 +11,9 @@ pub enum SpriteId {
     Player,
     Asteroid,
     PlayerBooster,
-    Enemy,
+    AlanEnemy,
+    BonBonEnemy,
+    AlanProjectile,
     PlayerBullet,
     Background0,
     Background1,
@@ -126,7 +128,20 @@ impl Sprite {
     }
 
     pub fn draw_frame(&self, frame_index: u32, pos: Vec2, rot: f32, size: f32) {
+        self.draw_frame_scaled(frame_index, pos, rot, size, Vec2::ONE, WHITE);
+    }
+
+    pub fn draw_frame_scaled(
+        &self,
+        frame_index: u32,
+        pos: Vec2,
+        rot: f32,
+        size: f32,
+        scale: Vec2,
+        tint: Color,
+    ) {
         let dest_size = self.scaled_dest_size(size);
+        let dest_size = Vec2::new(dest_size.x * scale.x, dest_size.y * scale.y);
 
         let draw_params = DrawTextureParams {
             dest_size: Some(dest_size),
@@ -146,7 +161,7 @@ impl Sprite {
             &self.texture,
             pos.x - dest_size.x / 2.0,
             pos.y - dest_size.y / 2.0,
-            WHITE,
+            tint,
             draw_params,
         );
     }
@@ -186,7 +201,7 @@ impl TextureManager {
             );
         }
 
-        // Enemy
+        // Alan enemy
         {
             let texture = load_texture("assets/Mini Pixel Pack 3/Enemies/Alan (16 x 16).png")
                 .await
@@ -194,7 +209,7 @@ impl TextureManager {
             texture.set_filter(FilterMode::Nearest);
 
             self.textures.insert(
-                SpriteId::Enemy,
+                SpriteId::AlanEnemy,
                 Sprite {
                     texture,
                     size: Vec2 { x: 16.0, y: 16.0 },
@@ -203,6 +218,49 @@ impl TextureManager {
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
                     fps: 3.0,
+                },
+            );
+        }
+
+        // BonBon enemy
+        {
+            let texture = load_texture("assets/Mini Pixel Pack 3/Enemies/Bon_Bon (16 x 16).png")
+                .await
+                .unwrap();
+            texture.set_filter(FilterMode::Nearest);
+
+            self.textures.insert(
+                SpriteId::BonBonEnemy,
+                Sprite {
+                    texture,
+                    size: Vec2 { x: 16.0, y: 16.0 },
+                    texture_index: 0,
+                    animation_count: 4,
+                    size_mult: 1.0,
+                    time_scince_frame: 0.0,
+                    fps: 4.0,
+                },
+            );
+        }
+
+        // Alan projectile
+        {
+            let texture =
+                load_texture("assets/Mini Pixel Pack 3/Projectiles/Enemy_projectile (16 x 16).png")
+                    .await
+                    .unwrap();
+            texture.set_filter(FilterMode::Nearest);
+
+            self.textures.insert(
+                SpriteId::AlanProjectile,
+                Sprite {
+                    texture,
+                    size: Vec2 { x: 16.0, y: 16.0 },
+                    texture_index: 0,
+                    animation_count: 4,
+                    size_mult: 1.0,
+                    time_scince_frame: 0.0,
+                    fps: 8.0,
                 },
             );
         }

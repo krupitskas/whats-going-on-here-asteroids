@@ -5,17 +5,19 @@ use crate::{
     texture_manager::{Sprite, SpriteId, TextureManager},
 };
 
-pub struct PlayerExplosion {
+pub struct Explosion {
     pub position: Vec2,
     pub rotation: f32,
+    pub size: f32,
     pub animation: AnimationState,
 }
 
-impl PlayerExplosion {
-    pub fn new(position: Vec2, rotation: f32) -> PlayerExplosion {
-        PlayerExplosion {
+impl Explosion {
+    pub fn new(position: Vec2, rotation: f32, size: f32) -> Explosion {
+        Explosion {
             position,
             rotation,
+            size,
             animation: AnimationState::default(),
         }
     }
@@ -35,7 +37,7 @@ impl PlayerExplosion {
                 self.animation.frame_index,
                 self.position,
                 self.rotation,
-                44.0,
+                self.size,
             );
     }
 }

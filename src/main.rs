@@ -1,12 +1,15 @@
+mod alan_enemy;
 mod animation_state;
 mod asteroid;
+mod bon_bon_enemy;
 mod bullet;
 mod constants;
 mod enemy;
+mod enemy_projectile;
 mod enemy_vision;
+mod explosion;
 mod game_settings;
 mod math;
-mod player_explosion;
 mod scene;
 mod ship;
 mod texture_manager;
