@@ -1,4 +1,7 @@
-use macroquad::{math::Vec2, window::{screen_height, screen_width}};
+use macroquad::{
+    math::Vec2,
+    window::{screen_height, screen_width},
+};
 
 pub fn contrain_play_area(pos: Vec2) -> Vec2 {
     let mut new_pos = pos;

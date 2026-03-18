@@ -1,12 +1,15 @@
-mod constants;
+mod animation_state;
 mod asteroid;
 mod bullet;
+mod constants;
+mod enemy;
+mod enemy_vision;
 mod game_settings;
+mod math;
+mod player_explosion;
 mod scene;
 mod ship;
 mod texture_manager;
-mod math;
-mod enemy;
 
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
@@ -31,23 +34,22 @@ async fn main() {
             break;
         }
 
-        if scene.current_state == SceneState::MainMenu {
-            if is_key_down(KeyCode::Space) {
-                scene.new_level(screen_size().into());
-                scene.current_state = SceneState::InGame;
-                continue;
-            }
+        if scene.current_state == SceneState::MainMenu && is_key_down(KeyCode::Space) {
+            scene.new_level(screen_size().into());
+            scene.current_state = SceneState::InGame;
+            continue;
         }
 
-        if scene.current_state == SceneState::Lost {
-            if is_key_down(KeyCode::Space) {
-                scene.new_level(screen_size().into());
-                scene.current_state = SceneState::InGame;
-                continue;
-            }
+        if scene.current_state == SceneState::Lost && is_key_down(KeyCode::Space) {
+            scene.new_level(screen_size().into());
+            scene.current_state = SceneState::InGame;
+            continue;
         }
 
-        if scene.current_state == SceneState::InGame {
+        if matches!(
+            scene.current_state,
+            SceneState::InGame | SceneState::PlayerDying
+        ) {
             scene.update(delta_time);
         }
 
@@ -56,4 +58,3 @@ async fn main() {
         next_frame().await;
     }
 }
-

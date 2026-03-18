@@ -101,9 +101,7 @@ impl Ship {
 
         self.inertia -= self.inertia * 1.5 * delta_time;
 
-        if is_key_down(KeyCode::Space)
-            && (get_time() as f64 - self.last_shot_time) > BULLET_RELOAD_TIME
-        {
+        if is_key_down(KeyCode::Space) && (get_time() - self.last_shot_time) > BULLET_RELOAD_TIME {
             self.last_shot_time = get_time();
 
             bullets.push(Bullet {

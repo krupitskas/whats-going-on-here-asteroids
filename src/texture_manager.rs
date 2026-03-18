@@ -6,10 +6,6 @@ use macroquad::{
     texture::{DrawTextureParams, FilterMode, Texture2D, draw_texture_ex, load_texture},
 };
 
-// use once_cell::sync::OnceCell;
-
-// static SpriteManagerInst: OnceCell<TextureManager> = OnceCell::new();
-
 #[derive(PartialEq, Eq, Hash)]
 pub enum SpriteId {
     Player,
@@ -47,14 +43,14 @@ impl Sprite {
     }
 
     pub fn draw_animated_cover(&mut self, delta_time: f32, pos: Vec2, rot: f32, target: Vec2) {
-        let target_time_slice = 1.0 / self.fps as f32;
+        let target_time_slice = 1.0 / self.fps;
 
         self.time_scince_frame += delta_time;
 
         if self.time_scince_frame > target_time_slice {
             self.time_scince_frame = 0.0;
             self.texture_index += 1;
-            self.texture_index = self.texture_index % self.animation_count;
+            self.texture_index %= self.animation_count;
         }
 
         let scale_x = target.x / self.size.x;
@@ -90,14 +86,14 @@ impl Sprite {
     }
 
     pub fn draw_animated(&mut self, delta_time: f32, pos: Vec2, rot: f32, size: f32) {
-        let target_time_slice = 1.0 / self.fps as f32;
+        let target_time_slice = 1.0 / self.fps;
 
         self.time_scince_frame += delta_time; // BUG: Not sprite but instance of sprite
 
         if self.time_scince_frame > target_time_slice {
             self.time_scince_frame = 0.0;
             self.texture_index += 1;
-            self.texture_index = self.texture_index % self.animation_count;
+            self.texture_index %= self.animation_count;
         }
 
         let dest_size = self.scaled_dest_size(size);
@@ -126,12 +122,16 @@ impl Sprite {
     }
 
     pub fn draw(&self, pos: Vec2, rot: f32, size: f32) {
+        self.draw_frame(self.texture_index, pos, rot, size);
+    }
+
+    pub fn draw_frame(&self, frame_index: u32, pos: Vec2, rot: f32, size: f32) {
         let dest_size = self.scaled_dest_size(size);
 
         let draw_params = DrawTextureParams {
             dest_size: Some(dest_size),
             source: Some(Rect {
-                x: self.texture_index as f32 * self.size.x,
+                x: frame_index as f32 * self.size.x,
                 y: 0.0,
                 w: self.size.x,
                 h: self.size.y,
@@ -394,10 +394,10 @@ impl TextureManager {
                     texture,
                     size: Vec2 { x: 16.0, y: 16.0 },
                     texture_index: 0,
-                    animation_count: 6,
+                    animation_count: 4,
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
-                    fps: 3.0,
+                    fps: 10.0,
                 },
             );
         }
