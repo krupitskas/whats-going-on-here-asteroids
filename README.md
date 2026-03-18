@@ -1,4 +1,6 @@
-# Asteroids
+# ВИДЕОИГРА: АСТЕРОИДЫ
+
+That's right.
 
 ![Gameplay](gameplay.gif)
 
