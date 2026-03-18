@@ -12,6 +12,7 @@ mod game_settings;
 mod math;
 mod scene;
 mod ship;
+mod sparkle;
 mod texture_manager;
 
 use macroquad::{miniquad::window::screen_size, prelude::*};

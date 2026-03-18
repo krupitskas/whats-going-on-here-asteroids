@@ -12,6 +12,7 @@ use crate::{
     explosion::Explosion,
     math::{circles_overlap, contrain_play_area},
     ship::Ship,
+    sparkle::Sparkle,
     texture_manager::{SpriteId, TextureManager},
 };
 
@@ -39,8 +40,12 @@ enum BonBonCollision {
 
 pub struct Scene {
     pub player: Ship,
+    pub player_lives: u8,
+    pub player_invulnerability_time: f32,
     pub player_explosion: Option<Explosion>,
+    pub player_hit_sparkles: Vec<Sparkle>,
     pub impact_explosions: Vec<Explosion>,
+    pub screen_shake_time: f32,
     pub asteroids: Vec<Asteroid>,
     pub new_asteroids: Vec<Asteroid>,
     pub bullets: Vec<Bullet>,
@@ -60,8 +65,12 @@ impl Scene {
     pub fn new(screen_size: Vec2) -> Scene {
         Scene {
             player: Ship::new(screen_size),
+            player_lives: constants::PLAYER_LIVES,
+            player_invulnerability_time: 0.0,
             player_explosion: None,
+            player_hit_sparkles: Vec::new(),
             impact_explosions: Vec::new(),
+            screen_shake_time: 0.0,
             asteroids: Vec::new(),
             new_asteroids: Vec::new(),
             bullets: Vec::new(),
@@ -82,8 +91,12 @@ impl Scene {
         self.best_player_score = max(self.best_player_score, self.player_score);
         self.player_score = 0;
         self.player = Ship::new(screen_size);
+        self.player_lives = constants::PLAYER_LIVES;
+        self.player_invulnerability_time = 0.0;
         self.player_explosion = None;
+        self.player_hit_sparkles.clear();
         self.impact_explosions.clear();
+        self.screen_shake_time = 0.0;
         self.asteroids.clear();
         self.new_asteroids.clear();
         self.bullets.clear();
@@ -94,6 +107,15 @@ impl Scene {
         self.last_time_asteroid_spawned = now;
         self.last_time_enemy_spawned = now;
         self.level_started_at = now;
+    }
+
+    pub fn display_best_score(&self) -> u32 {
+        self.best_player_score.max(self.player_score)
+    }
+
+    pub fn update_damage_timers(&mut self, delta_time: f32) {
+        self.player_invulnerability_time = (self.player_invulnerability_time - delta_time).max(0.0);
+        self.screen_shake_time = (self.screen_shake_time - delta_time).max(0.0);
     }
 
     pub fn try_spawn_asteroid(&mut self) {
@@ -236,6 +258,28 @@ impl Scene {
         }
     }
 
+    pub fn damage_player(&mut self, hit_position: Vec2) {
+        if self.current_state != SceneState::InGame || self.player_invulnerability_time > 0.0 {
+            return;
+        }
+
+        self.player_hit_sparkles.push(Sparkle::new(
+            (self.player.position + hit_position) * 0.5,
+            constants::PLAYER_HIT_SPARKLE_SIZE,
+        ));
+        self.screen_shake_time = constants::PLAYER_SHAKE_DURATION_SEC;
+
+        if self.player_lives > 0 {
+            self.player_lives -= 1;
+        }
+
+        if self.player_lives == 0 {
+            self.begin_player_destruction();
+        } else {
+            self.player_invulnerability_time = constants::PLAYER_HIT_INVULNERABILITY_SEC;
+        }
+    }
+
     pub fn build_alan_vision_targets(&self) -> Vec<VisionTarget> {
         let mut targets = Vec::new();
 
@@ -362,8 +406,9 @@ impl Scene {
                         continue;
                     }
 
+                    let hit_position = self.enemies[enemy_index].position();
                     self.damage_enemy(enemy_index, false);
-                    self.begin_player_destruction();
+                    self.damage_player(hit_position);
                 }
                 BonBonCollision::Asteroid {
                     enemy_index,
@@ -402,14 +447,14 @@ impl Scene {
     pub fn check_player_collisions(&mut self) {
         for asteroid in self.asteroids.iter() {
             if asteroid.alive && asteroid.colliding_ship(&self.player) {
-                self.begin_player_destruction();
+                self.damage_player(asteroid.position);
                 return;
             }
         }
 
         for enemy in self.enemies.iter() {
             if enemy.alive() && enemy.colliding_ship_position(self.player.position) {
-                self.begin_player_destruction();
+                self.damage_player(enemy.position());
                 return;
             }
         }
@@ -498,7 +543,7 @@ impl Scene {
                 )
             {
                 self.enemy_projectiles[projectile_index].alive = false;
-                self.begin_player_destruction();
+                self.damage_player(projectile_position);
                 continue;
             }
 
@@ -538,6 +583,21 @@ impl Scene {
         }
     }
 
+    pub fn update_player_hit_sparkles(&mut self, delta_time: f32) {
+        let sprite = self
+            .texture_manager
+            .textures
+            .get(&SpriteId::SparkleVFX)
+            .unwrap();
+
+        for sparkle in self.player_hit_sparkles.iter_mut() {
+            sparkle.update(delta_time, sprite);
+        }
+
+        self.player_hit_sparkles
+            .retain(|sparkle| !sparkle.animation.finished);
+    }
+
     pub fn update_impact_explosions(&mut self, delta_time: f32) {
         let sprite = self
             .texture_manager
@@ -561,6 +621,8 @@ impl Scene {
     }
 
     pub fn update(&mut self, delta_time: f32) {
+        self.update_damage_timers(delta_time);
+
         match self.current_state {
             SceneState::InGame => {
                 self.player.update_inputs(&mut self.bullets);
@@ -576,6 +638,7 @@ impl Scene {
                     self.update_enemy_projectiles(delta_time);
                 }
 
+                self.update_player_hit_sparkles(delta_time);
                 self.update_impact_explosions(delta_time);
                 self.cleanup_entities();
             }
@@ -585,12 +648,41 @@ impl Scene {
                 self.resolve_bon_bon_collisions();
                 self.update_bullets(delta_time);
                 self.update_enemy_projectiles(delta_time);
+                self.update_player_hit_sparkles(delta_time);
                 self.update_impact_explosions(delta_time);
                 self.cleanup_entities();
                 self.update_player_explosion(delta_time);
             }
             SceneState::MainMenu | SceneState::Lost => {}
         }
+    }
+
+    pub fn shake_offset(&self) -> Vec2 {
+        if self.screen_shake_time <= 0.0 {
+            return Vec2::ZERO;
+        }
+
+        let strength = constants::PLAYER_SHAKE_STRENGTH
+            * (self.screen_shake_time / constants::PLAYER_SHAKE_DURATION_SEC);
+
+        Vec2::new(
+            gen_range(-strength, strength),
+            gen_range(-strength, strength),
+        )
+    }
+
+    pub fn apply_camera(&self) {
+        let offset = self.shake_offset();
+        let half_width = screen_width() / 2.0;
+        let half_height = screen_height() / 2.0;
+
+        // Macroquad already flips Y for screen rendering internally, so using
+        // a negative Y zoom here would invert the whole scene a second time.
+        set_camera(&Camera2D {
+            target: Vec2::new(half_width + offset.x, half_height + offset.y),
+            zoom: Vec2::new(2.0 / screen_width(), 2.0 / screen_height()),
+            ..Default::default()
+        });
     }
 
     pub fn render_background(&mut self, delta_time: f32) {
@@ -612,6 +704,7 @@ impl Scene {
 
     pub fn render(&mut self, delta_time: f32) {
         clear_background(MAGENTA);
+        self.apply_camera();
         self.render_background(delta_time);
 
         if self.current_state == SceneState::MainMenu {
@@ -621,6 +714,7 @@ impl Scene {
                 .get(&SpriteId::StartUI)
                 .unwrap()
                 .draw(pos, 0.0, 360.0);
+            set_default_camera();
             return;
         }
 
@@ -631,6 +725,30 @@ impl Scene {
                 .get(&SpriteId::GameOverUI)
                 .unwrap()
                 .draw(pos, 0.0, 420.0);
+
+            draw_text(
+                std::format!("RUN SCORE: {}", self.player_score).as_str(),
+                screen_width() / 2.0 - 90.0,
+                screen_height() / 2.0 + 40.0,
+                24.0,
+                YELLOW,
+            );
+            draw_text(
+                std::format!("BEST SCORE: {}", self.display_best_score()).as_str(),
+                screen_width() / 2.0 - 90.0,
+                screen_height() / 2.0 + 70.0,
+                24.0,
+                SKYBLUE,
+            );
+            draw_text(
+                "PRESS SPACE TO RESTART",
+                screen_width() / 2.0 - 135.0,
+                screen_height() / 2.0 + 105.0,
+                22.0,
+                WHITE,
+            );
+
+            set_default_camera();
             return;
         }
 
@@ -682,6 +800,10 @@ impl Scene {
             }
         }
 
+        for sparkle in self.player_hit_sparkles.iter() {
+            sparkle.render(&mut self.texture_manager);
+        }
+
         for explosion in self.impact_explosions.iter() {
             explosion.render(&mut self.texture_manager);
         }
@@ -706,32 +828,41 @@ impl Scene {
             YELLOW,
         );
         draw_text(
-            std::format!("BEST SCORE: {}", self.best_player_score).as_str(),
+            std::format!("BEST SCORE: {}", self.display_best_score()).as_str(),
             20.0,
             60.0,
             20.0,
             YELLOW,
         );
         draw_text(
-            std::format!("DIED {} TIMES", self.player_died_times).as_str(),
+            std::format!("LIVES: {}", self.player_lives).as_str(),
             20.0,
             80.0,
             20.0,
-            YELLOW,
+            ORANGE,
         );
         draw_text(
-            std::format!("ENEMIES: {}", self.enemies.len()).as_str(),
+            std::format!("DIED {} TIMES", self.player_died_times).as_str(),
             20.0,
             100.0,
             20.0,
             YELLOW,
         );
         draw_text(
-            std::format!("NEXT ENEMY: {:.1}s", self.next_enemy_spawn_in()).as_str(),
+            std::format!("ENEMIES: {}", self.enemies.len()).as_str(),
             20.0,
             120.0,
             20.0,
+            YELLOW,
+        );
+        draw_text(
+            std::format!("NEXT ENEMY: {:.1}s", self.next_enemy_spawn_in()).as_str(),
+            20.0,
+            140.0,
+            20.0,
             SKYBLUE,
         );
+
+        set_default_camera();
     }
 }

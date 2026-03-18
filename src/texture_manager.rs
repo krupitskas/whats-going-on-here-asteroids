@@ -19,6 +19,7 @@ pub enum SpriteId {
     Background1,
     Background2,
     ExplosionVFX,
+    SparkleVFX,
     StartUI,
     GameOverUI,
 }
@@ -456,6 +457,27 @@ impl TextureManager {
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
                     fps: 10.0,
+                },
+            );
+        }
+
+        // Sparkle
+        {
+            let texture = load_texture("assets/Mini Pixel Pack 3/Effects/Sparkle (16 x 16).png")
+                .await
+                .unwrap();
+            texture.set_filter(FilterMode::Nearest);
+
+            self.textures.insert(
+                SpriteId::SparkleVFX,
+                Sprite {
+                    texture,
+                    size: Vec2 { x: 16.0, y: 16.0 },
+                    texture_index: 0,
+                    animation_count: 5,
+                    size_mult: 2.0,
+                    time_scince_frame: 0.0,
+                    fps: 12.0,
                 },
             );
         }
