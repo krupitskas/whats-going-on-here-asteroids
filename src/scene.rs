@@ -59,9 +59,7 @@ impl Scene {
         self.enemies.clear();
         self.last_time_asteroid_spawned = 0.0;
 
-        self.enemies.push(Enemy {
-            position: Vec2 { x: 700.0, y: 500.0 },
-        });
+        self.enemies.push(Enemy::new(Vec2 { x: 700.0, y: 500.0 }));
     }
 
     pub fn try_spawn_asteroid(&mut self) {
@@ -141,8 +139,8 @@ impl Scene {
                             };
 
                             {
-                                let x = rand::gen_range(0.0, 800.0);
-                                let y = rand::gen_range(0.0, 800.0);
+                                let x = rand::gen_range(0.0, screen_width());
+                                let y = rand::gen_range(0.0, screen_height());
 
                                 let direction = (asteroid.position - Vec2 { x, y }).normalize();
 
@@ -155,8 +153,8 @@ impl Scene {
                                 });
                             }
                             {
-                                let x = rand::gen_range(0.0, 800.0);
-                                let y = rand::gen_range(0.0, 800.0);
+                                let x = rand::gen_range(0.0, screen_width());
+                                let y = rand::gen_range(0.0, screen_height());
 
                                 let direction = (asteroid.position - Vec2 { x, y }).normalize();
 
@@ -191,19 +189,22 @@ impl Scene {
             y: screen_height() / 2.0,
         };
 
-        let size = screen_width().max(screen_height());
+        let target = Vec2 {
+            x: screen_width(),
+            y: screen_height(),
+        };
 
         self.texture_manager
             .textures
             .get_mut(&SpriteId::Background0)
             .unwrap()
-            .draw_animated(delta_time, pos, 0.0, size);
+            .draw_animated_cover(delta_time, pos, 0.0, target);
 
         self.texture_manager
             .textures
             .get_mut(&SpriteId::Background1)
             .unwrap()
-            .draw_animated(delta_time, pos, 0.0, size);
+            .draw_animated_cover(delta_time, pos, 0.0, target);
 
         // self.texture_manager
         //     .textures
@@ -225,7 +226,7 @@ impl Scene {
                 .textures
                 .get(&SpriteId::StartUI)
                 .unwrap()
-                .draw(pos, 0.0, 100.0);
+                .draw(pos, 0.0, 360.0);
             return;
         }
 
@@ -238,14 +239,14 @@ impl Scene {
                 .textures
                 .get(&SpriteId::GameOverUI)
                 .unwrap()
-                .draw(pos, 0.0, 100.0);
+                .draw(pos, 0.0, 420.0);
             return;
         }
 
         self.player
             .render(delta_time, &mut self.texture_manager.textures);
 
-        for enemy in self.enemies.iter() {
+        for enemy in self.enemies.iter_mut() {
             enemy.render(delta_time, &mut self.texture_manager.textures);
         }
 

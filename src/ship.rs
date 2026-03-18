@@ -115,7 +115,7 @@ impl Ship {
         }
     }
 
-    pub fn render(&self, delta_time: f32, sprites: &mut HashMap<SpriteId, Sprite>) {
+    pub fn render(&self, _delta_time: f32, sprites: &mut HashMap<SpriteId, Sprite>) {
         // draw_circle(
         //     self.player.position.x,
         //     self.player.position.y,
@@ -151,8 +151,5 @@ impl Ship {
         //     1.0,
         //     YELLOW,
         // );
-
-        // debug
-        draw_circle(mouse_position().0, mouse_position().1, 5.0, PURPLE);
     }
 }

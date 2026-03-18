@@ -22,7 +22,7 @@ pub enum SpriteId {
     Background2,
     ExplosionVFX,
     StartUI,
-    GameOverUI
+    GameOverUI,
 }
 
 pub struct Sprite {
@@ -32,10 +32,63 @@ pub struct Sprite {
     pub animation_count: u32,
     pub size_mult: f32,
     pub time_scince_frame: f32,
-    pub fps: f32
+    pub fps: f32,
 }
 
 impl Sprite {
+    fn scaled_dest_size(&self, target_size: f32) -> Vec2 {
+        let base = self.size.x.max(self.size.y);
+        let scale = (target_size * self.size_mult) / base;
+
+        Vec2 {
+            x: self.size.x * scale,
+            y: self.size.y * scale,
+        }
+    }
+
+    pub fn draw_animated_cover(&mut self, delta_time: f32, pos: Vec2, rot: f32, target: Vec2) {
+        let target_time_slice = 1.0 / self.fps as f32;
+
+        self.time_scince_frame += delta_time;
+
+        if self.time_scince_frame > target_time_slice {
+            self.time_scince_frame = 0.0;
+            self.texture_index += 1;
+            self.texture_index = self.texture_index % self.animation_count;
+        }
+
+        let scale_x = target.x / self.size.x;
+        let scale_y = target.y / self.size.y;
+        let scale = scale_x.max(scale_y) * self.size_mult;
+
+        let dest_size = Vec2 {
+            x: self.size.x * scale,
+            y: self.size.y * scale,
+        };
+
+        let draw_params = DrawTextureParams {
+            dest_size: Some(dest_size),
+            source: Some(Rect {
+                x: self.texture_index as f32 * self.size.x,
+                y: 0.0,
+                w: self.size.x,
+                h: self.size.y,
+            }),
+            rotation: rot,
+            pivot: None,
+            flip_x: false,
+            flip_y: false,
+        };
+
+        draw_texture_ex(
+            &self.texture,
+            pos.x - dest_size.x / 2.0,
+            pos.y - dest_size.y / 2.0,
+            WHITE,
+            draw_params,
+        );
+    }
+
     pub fn draw_animated(&mut self, delta_time: f32, pos: Vec2, rot: f32, size: f32) {
         let target_time_slice = 1.0 / self.fps as f32;
 
@@ -47,10 +100,10 @@ impl Sprite {
             self.texture_index = self.texture_index % self.animation_count;
         }
 
-        let size = size * self.size_mult;
+        let dest_size = self.scaled_dest_size(size);
 
         let draw_params = DrawTextureParams {
-            dest_size: Some(Vec2 { x: size, y: size }),
+            dest_size: Some(dest_size),
             source: Some(Rect {
                 x: self.texture_index as f32 * self.size.x,
                 y: 0.0,
@@ -65,18 +118,18 @@ impl Sprite {
 
         draw_texture_ex(
             &self.texture,
-            pos.x - size / 2.0,
-            pos.y - size / 2.0,
+            pos.x - dest_size.x / 2.0,
+            pos.y - dest_size.y / 2.0,
             WHITE,
             draw_params,
         );
     }
 
     pub fn draw(&self, pos: Vec2, rot: f32, size: f32) {
-        let size = size * self.size_mult;
+        let dest_size = self.scaled_dest_size(size);
 
         let draw_params = DrawTextureParams {
-            dest_size: Some(Vec2 { x: size, y: size }),
+            dest_size: Some(dest_size),
             source: Some(Rect {
                 x: self.texture_index as f32 * self.size.x,
                 y: 0.0,
@@ -91,8 +144,8 @@ impl Sprite {
 
         draw_texture_ex(
             &self.texture,
-            pos.x - size / 2.0,
-            pos.y - size / 2.0,
+            pos.x - dest_size.x / 2.0,
+            pos.y - dest_size.y / 2.0,
             WHITE,
             draw_params,
         );
@@ -128,7 +181,7 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
-                    fps: 0.0
+                    fps: 0.0,
                 },
             );
         }
@@ -149,7 +202,7 @@ impl TextureManager {
                     animation_count: 6,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
-                    fps: 3.0
+                    fps: 3.0,
                 },
             );
         }
@@ -170,7 +223,7 @@ impl TextureManager {
                     animation_count: 9,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
-                    fps: background_fps
+                    fps: background_fps,
                 },
             );
         }
@@ -191,7 +244,7 @@ impl TextureManager {
                     animation_count: 9,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
-                    fps: background_fps
+                    fps: background_fps,
                 },
             );
         }
@@ -212,7 +265,7 @@ impl TextureManager {
                     animation_count: 9,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
-                    fps: background_fps
+                    fps: background_fps,
                 },
             );
         }
@@ -235,7 +288,7 @@ impl TextureManager {
                     animation_count: 2,
                     size_mult: 1.0,
                     time_scince_frame: 0.0,
-                    fps: 10.0
+                    fps: 10.0,
                 },
             );
         }
@@ -257,7 +310,7 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 3.0,
                     time_scince_frame: 0.0,
-                    fps: 0.0
+                    fps: 0.0,
                 },
             );
         }
@@ -280,18 +333,16 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
-                    fps: 0.0
+                    fps: 0.0,
                 },
             );
         }
 
         // Start
         {
-            let texture = load_texture(
-                "assets/Mini Pixel Pack 3/UI objects/START (48 x 8).png",
-            )
-            .await
-            .unwrap();
+            let texture = load_texture("assets/Mini Pixel Pack 3/UI objects/START (48 x 8).png")
+                .await
+                .unwrap();
             texture.set_filter(FilterMode::Nearest);
 
             self.textures.insert(
@@ -303,18 +354,17 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
-                    fps: 0.0
+                    fps: 0.0,
                 },
             );
         }
 
         // Game Over
         {
-            let texture = load_texture(
-                "assets/Mini Pixel Pack 3/UI objects/GAME_OVER (72 x 8).png",
-            )
-            .await
-            .unwrap();
+            let texture =
+                load_texture("assets/Mini Pixel Pack 3/UI objects/GAME_OVER (72 x 8).png")
+                    .await
+                    .unwrap();
             texture.set_filter(FilterMode::Nearest);
 
             self.textures.insert(
@@ -326,18 +376,16 @@ impl TextureManager {
                     animation_count: 1,
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
-                    fps: 0.0
+                    fps: 0.0,
                 },
             );
         }
 
         // Explosion
         {
-            let texture = load_texture(
-                "assets/Mini Pixel Pack 3/Effects/Explosion (16 x 16).png",
-            )
-            .await
-            .unwrap();
+            let texture = load_texture("assets/Mini Pixel Pack 3/Effects/Explosion (16 x 16).png")
+                .await
+                .unwrap();
             texture.set_filter(FilterMode::Nearest);
 
             self.textures.insert(
@@ -349,7 +397,7 @@ impl TextureManager {
                     animation_count: 6,
                     size_mult: 2.0,
                     time_scince_frame: 0.0,
-                    fps: 3.0
+                    fps: 3.0,
                 },
             );
         }

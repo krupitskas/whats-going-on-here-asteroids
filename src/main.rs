@@ -25,7 +25,7 @@ async fn main() {
     show_mouse(false);
 
     loop {
-        let delta_time = get_frame_time(); // milliseconds
+        let delta_time = get_frame_time(); // seconds
 
         if is_key_down(KeyCode::Escape) {
             break;
